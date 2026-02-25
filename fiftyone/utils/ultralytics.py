@@ -771,6 +771,8 @@ class FiftyOneYOLOEVPModel(FiftyOneYOLOModel):
 
         all_labels = []
         try:
+            # YOLOEVPSegPredictor requires per-image visual_prompts dicts,
+            # so batched prediction is not supported here.
             for orig_img, wh, prompt in zip(
                 orig_images, width_height, prompts, strict=True
             ):
@@ -1193,7 +1195,7 @@ def _detections_to_visual_prompts(detections, img_width, img_height):
     labels = [d.label for d in dets]
     classes = list(dict.fromkeys(labels))
     label_to_idx = {c: i for i, c in enumerate(classes)}
-    cls_indices = [label_to_idx[l] for l in labels]
+    cls_indices = [label_to_idx[label] for label in labels]
 
     return boxes.tolist(), cls_indices, classes
 
@@ -1201,9 +1203,9 @@ def _detections_to_visual_prompts(detections, img_width, img_height):
 def _get_yoloe_vp_predictor():
     try:
         from ultralytics.models.yolo.yoloe import YOLOEVPSegPredictor
-
-        return YOLOEVPSegPredictor
     except ImportError as e:
         raise ImportError(
             "Visual prompts require ultralytics>=8.4.0 with YOLOE support"
         ) from e
+    else:
+        return YOLOEVPSegPredictor
