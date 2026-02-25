@@ -752,16 +752,16 @@ class FiftyOneYOLOEVPModel(FiftyOneYOLOModel):
 
     def _predict_all(self, imgs):
         if self._preprocess and self._transforms is not None:
-            imgs = [self._transforms(img) for img in imgs]
+            transformed = [self._transforms(img) for img in imgs]
             if self.has_collate_fn:
-                imgs = self.collate_fn(imgs)
+                transformed = self.collate_fn(transformed)
 
-        prompts = imgs.get("prompts") if isinstance(imgs, dict) else None
+            prompts = transformed.get("prompts") if isinstance(transformed, dict) else None
 
-        if prompts and any(p is not None for p in prompts):
-            return self._predict_all_visual_prompts(
-                imgs["orig_imgs"], imgs["orig_shapes"], prompts
-            )
+            if prompts and any(p is not None for p in prompts):
+                return self._predict_all_visual_prompts(
+                    transformed["orig_imgs"], transformed["orig_shapes"], prompts
+                )
 
         return super()._predict_all(imgs)
 
