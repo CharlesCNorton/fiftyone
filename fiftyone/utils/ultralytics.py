@@ -717,11 +717,11 @@ class YOLOEVPGetItem(fout.GetItem):
 
     def __call__(self, d):
         img = fout._load_image(d["filepath"], use_numpy=False, force_rgb=True)
-        result = (
-            self._transform(img)
-            if self._transform is not None
-            else {"img": np.asarray(img), "orig_img": np.asarray(img)}
-        )
+        if self._transform is None:
+            raise TypeError(
+                "YOLOEVPGetItem requires a transform to produce tensors"
+            )
+        result = self._transform(img)
         result["prompt"] = d["prompt_field"]
         return result
 
