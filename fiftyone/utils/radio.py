@@ -37,11 +37,14 @@ class RadioGetItem(fout.GetItem):
 
     def __call__(self, sample_dict):
         """Load and return a single image."""
-        return fout._load_image(
-            sample_dict["filepath"],
-            use_numpy=False,
-            force_rgb=True,
-        )
+        import fiftyone.core.storage as fos
+        from PIL import Image
+
+        with fos.open_file(sample_dict["filepath"], "rb") as f:
+            img = Image.open(f)
+            img = img.convert("RGB")
+
+        return img
 
 
 class RadioOutputProcessor(fout.OutputProcessor):
