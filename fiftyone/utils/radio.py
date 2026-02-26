@@ -368,8 +368,13 @@ class CRadioV4Model(fout.TorchImageModel, fom.SupportsGetItem):
 
         original_sizes = [img.size for img in imgs]  # (width, height)
 
-        summaries = []
-        spatial_features = []
+        results = []
+
+        use_amp = (
+            self.config.use_mixed_precision
+            and self._mixed_precision_supported
+            and self._using_gpu
+        )
 
         for img in imgs:
             pixel_values = self._image_processor(
@@ -389,12 +394,6 @@ class CRadioV4Model(fout.TorchImageModel, fom.SupportsGetItem):
                     align_corners=False,
                 )
 
-            use_amp = (
-                self.config.use_mixed_precision
-                and self._mixed_precision_supported
-                and self._using_gpu
-            )
-
             if use_amp:
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     with torch.no_grad():
@@ -403,12 +402,10 @@ class CRadioV4Model(fout.TorchImageModel, fom.SupportsGetItem):
                 with torch.no_grad():
                     summary, spatial = self._model(pixel_values)
 
-            summaries.append(summary)
-            spatial_features.append(spatial)
+            if self.config.output_type == "summary":
+                results.append(summary)
+            else:
+                results.append(spatial)
 
-        if self.config.output_type == "summary":
-            batch_output = torch.cat(summaries, dim=0)
-            return self._output_processor(batch_output, original_sizes)
-        else:
-            batch_output = torch.cat(spatial_features, dim=0)
-            return self._output_processor(batch_output, original_sizes)
+        batch_output = torch.cat(results, dim=0)
+        return self._output_processor(batch_output, original_sizes)
