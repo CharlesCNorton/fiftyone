@@ -9,7 +9,6 @@ logging.basicConfig(level=logging.WARNING)
 
 import numpy as np
 from PIL import Image
-import pytest
 import torch
 import tempfile
 import os
@@ -30,7 +29,7 @@ def test_config_output_summary():
     from fiftyone.utils.radio import CRadioV4ModelConfig
     config = CRadioV4ModelConfig({"output_type": "summary"})
     assert config.output_type == "summary"
-    assert config.as_feature_extractor == True
+    assert config.as_feature_extractor
 
 def test_config_output_spatial():
     from fiftyone.utils.radio import CRadioV4ModelConfig
@@ -41,22 +40,22 @@ def test_config_output_spatial():
 def test_config_mixed_precision_default():
     from fiftyone.utils.radio import CRadioV4ModelConfig
     config = CRadioV4ModelConfig({})
-    assert config.use_mixed_precision == True
+    assert config.use_mixed_precision
 
 def test_config_mixed_precision_false():
     from fiftyone.utils.radio import CRadioV4ModelConfig
     config = CRadioV4ModelConfig({"use_mixed_precision": False})
-    assert config.use_mixed_precision == False
+    assert not config.use_mixed_precision
 
 def test_config_smoothing_default():
     from fiftyone.utils.radio import CRadioV4ModelConfig
     config = CRadioV4ModelConfig({})
-    assert config.apply_smoothing == True
+    assert config.apply_smoothing
 
 def test_config_smoothing_false():
     from fiftyone.utils.radio import CRadioV4ModelConfig
     config = CRadioV4ModelConfig({"apply_smoothing": False})
-    assert config.apply_smoothing == False
+    assert not config.apply_smoothing
 
 def test_config_sigma_default():
     from fiftyone.utils.radio import CRadioV4ModelConfig
@@ -111,8 +110,8 @@ def test_config_combined():
     })
     assert config.hf_repo == "nvidia/C-RADIOv4-SO400M"
     assert config.output_type == "spatial"
-    assert config.use_mixed_precision == False
-    assert config.apply_smoothing == True
+    assert not config.use_mixed_precision
+    assert config.apply_smoothing
     assert config.smoothing_sigma == 2.0
 
 
