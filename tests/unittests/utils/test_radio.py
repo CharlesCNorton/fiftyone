@@ -931,11 +931,11 @@ def test_edge_power2_dims():
     from fiftyone.utils.radio import CRadioV4ModelConfig, CRadioV4Model
     config = CRadioV4ModelConfig({"output_type": "summary"})
     model = CRadioV4Model(config)
-    for size in [64, 128, 256, 512, 1024]:
-        img = Image.new("RGB", (size, size))
-        with model:
+    with model:
+        for size in [64, 128, 256, 512, 1024]:
+            img = Image.new("RGB", (size, size))
             result = model._predict_all([img])
-        assert result[0].shape == (2560,)
+            assert result[0].shape == (2560,)
 
 def test_edge_from_file():
     from fiftyone.utils.radio import CRadioV4ModelConfig, CRadioV4Model
