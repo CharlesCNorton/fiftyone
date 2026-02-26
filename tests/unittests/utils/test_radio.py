@@ -941,8 +941,9 @@ def test_edge_from_file():
     config = CRadioV4ModelConfig({"output_type": "summary"})
     model = CRadioV4Model(config)
 
-    # Create temp file
-    temp_path = tempfile.mktemp(suffix=".png")
+    tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    temp_path = tmp.name
+    tmp.close()
     try:
         img = Image.new("RGB", (512, 512), color=(100, 150, 200))
         img.save(temp_path)
@@ -963,7 +964,9 @@ def test_edge_jpeg():
     config = CRadioV4ModelConfig({"output_type": "summary"})
     model = CRadioV4Model(config)
 
-    temp_path = tempfile.mktemp(suffix=".jpg")
+    tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+    temp_path = tmp.name
+    tmp.close()
     try:
         img = Image.new("RGB", (512, 512), color=(100, 150, 200))
         img.save(temp_path, quality=85)
