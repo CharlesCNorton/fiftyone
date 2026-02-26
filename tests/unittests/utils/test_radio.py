@@ -953,11 +953,11 @@ def test_edge_from_file():
         with model:
             result = model._predict_all([loaded])
         loaded.close()
+
+        assert result[0].shape == (2560,)
     finally:
         if os.path.exists(temp_path):
             os.unlink(temp_path)
-
-    assert result[0].shape == (2560,)
 
 def test_edge_jpeg():
     from fiftyone.utils.radio import CRadioV4ModelConfig, CRadioV4Model
@@ -973,11 +973,11 @@ def test_edge_jpeg():
         with model:
             result = model._predict_all([loaded])
         loaded.close()
+
+        assert result[0].shape == (2560,)
     finally:
         if os.path.exists(temp_path):
             os.unlink(temp_path)
-
-    assert result[0].shape == (2560,)
 
 def test_edge_model_reuse():
     from fiftyone.utils.radio import CRadioV4ModelConfig, CRadioV4Model
