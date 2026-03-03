@@ -115,6 +115,16 @@ def test_sam2_video():
     )
 
 
+def test_sam2_video_on_flattened_images():
+    models = ["segment-anything-2-hiera-tiny-video-torch"]
+    _apply_video_models_on_flattened_dataset(
+        models,
+        max_samples=4,
+        model_kwargs=dict(media_mode="image"),
+        apply_kwargs={_SAM_PROMPT_FIELD: "detections"},
+    )
+
+
 def test_keypoint_models():
     models = _get_models_with_tag("keypoints")
     _apply_person_keypoint_models(models)
@@ -260,10 +270,11 @@ def _apply_video_models(
         dataset_name=fo.get_default_dataset_name(),
         max_samples=max_samples,
     )
+    dataset.match_frames(F("frame_number") <= 2 * max_samples).keep_frames()
 
     if _SAM_PROMPT_FIELD in kwargs:
-        dataset.match_frames(F("frame_number" > 1)).set_field(
-            "frames.detections", None
+        dataset.match_frames(F("frame_number") > 1).set_field(
+            apply_kwargs[_SAM_PROMPT_FIELD], None
         ).save()
 
     for idx, model_name in enumerate(model_names, 1):
@@ -281,6 +292,58 @@ def _apply_video_models(
 
     session = fo.launch_app(dataset)
     session.wait()
+
+
+def _apply_video_models_on_flattened_dataset(
+    model_names,
+    batch_size=None,
+    confidence_thresh=None,
+    pass_confidence_thresh=False,
+    max_samples=10,
+    model_kwargs=None,
+    apply_kwargs=None,
+):
+    if pass_confidence_thresh:
+        kwargs = {"confidence_thresh": confidence_thresh}
+    else:
+        kwargs = {}
+
+    if apply_kwargs:
+        kwargs.update(apply_kwargs)
+
+    dataset = foz.load_zoo_dataset(
+        "quickstart-video",
+        dataset_name=fo.get_default_dataset_name(),
+        max_samples=1,  # get all frames from the first video sample
+    )
+    dataset = dataset.to_frames(sample_frames=True).limit(max_samples)
+
+    if _SAM_PROMPT_FIELD in kwargs:
+        dataset.match(F("frame_number") > 1).set_field(
+            apply_kwargs[_SAM_PROMPT_FIELD], None
+        ).save()
+
+    for idx, model_name in enumerate(model_names, 1):
+        print(
+            "Running model %d/%d: '%s'" % (idx, len(model_names), model_name)
+        )
+
+        model = foz.load_zoo_model(model_name, **(model_kwargs or {}))
+        assert model.media_mode == "image"
+
+        label_field = model_name.lower().replace("-", "_").replace(".", "_")
+
+        dataset.apply_model(
+            model, label_field=label_field, batch_size=batch_size, **kwargs
+        )
+
+        # TODO(neeraja): Revert these asserts
+        sample = dataset.last()
+        assert sample[label_field] is not None
+        assert len(sample[label_field].detections) > 0
+
+    # session = fo.launch_app(dataset)
+    # session.wait()
 
 
 def _apply_models_with_logits(model_names, store_logits=True):
