@@ -2012,6 +2012,8 @@ def _patch_collate_fn(batch):
 
 def _parse_batch_size(batch_size, model, use_data_loader):
     if batch_size is None:
+        batch_size = getattr(model, "default_batch_size", None)
+    if batch_size is None:
         batch_size = fo.config.default_batch_size
 
     if batch_size is not None and batch_size > 1 and model.ragged_batches:
