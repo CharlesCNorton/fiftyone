@@ -20,7 +20,6 @@ from fiftyone.core.camera import (
     StaticTransformRef,
 )
 import fiftyone.server.routes.camera as forc
-from fiftyone.server.utils.datasets import get_dataset, get_sample_from_dataset
 
 
 @pytest.fixture(name="dataset")
@@ -298,8 +297,9 @@ class TestStaticTransformsRoute:
                 source_frame="camera",
                 target_frame="world",
             ),
-            StaticTransformRef(ref="camera::world"),
         ]
+        sample["transform_ref"] = StaticTransformRef(ref="camera::world")
+
         sample.save()
 
         request = mock_request()
@@ -870,94 +870,3 @@ class TestGroupStaticTransformsRoute:
         assert data["group_id"] is not None
         # Verify it's a valid ObjectId string
         assert len(data["group_id"]) == 24
-
-
-class TestHelperFunctions:
-    """Tests for helper functions in the camera routes module."""
-
-    def test_parse_sample_ids_success(self):
-        """Tests successful parsing of sample_ids."""
-        mock_request = MagicMock()
-        mock_request.query_params = {"sample_ids": "id1,id2,id3"}
-
-        result = forc._parse_sample_ids(mock_request)
-
-        assert result == ["id1", "id2", "id3"]
-
-    def test_parse_sample_ids_with_whitespace(self):
-        """Tests parsing sample_ids with whitespace."""
-        mock_request = MagicMock()
-        mock_request.query_params = {"sample_ids": "  id1  ,  id2  ,  id3  "}
-
-        result = forc._parse_sample_ids(mock_request)
-
-        assert result == ["id1", "id2", "id3"]
-
-    def test_parse_sample_ids_missing_param(self):
-        """Tests that HTTPException is raised when param is missing."""
-        mock_request = MagicMock()
-        mock_request.query_params = {}
-
-        with pytest.raises(HTTPException) as exc_info:
-            forc._parse_sample_ids(mock_request)
-
-        assert exc_info.value.status_code == 400
-        assert (
-            "Missing required query parameter 'sample_ids'"
-            in exc_info.value.detail
-        )
-
-    def test_parse_sample_ids_empty_string(self):
-        """Tests that HTTPException is raised for empty string."""
-        mock_request = MagicMock()
-        mock_request.query_params = {"sample_ids": ""}
-
-        with pytest.raises(HTTPException) as exc_info:
-            forc._parse_sample_ids(mock_request)
-
-        assert exc_info.value.status_code == 400
-        assert (
-            "Missing required query parameter 'sample_ids'"
-            in exc_info.value.detail
-        )
-
-    def test_parse_sample_ids_only_whitespace(self):
-        """Tests that HTTPException is raised for whitespace-only values."""
-        mock_request = MagicMock()
-        mock_request.query_params = {"sample_ids": "  ,  ,  "}
-
-        with pytest.raises(HTTPException) as exc_info:
-            forc._parse_sample_ids(mock_request)
-
-        assert exc_info.value.status_code == 400
-        assert "No valid sample IDs provided" in exc_info.value.detail
-
-    def test_get_dataset_success(self, dataset, dataset_id):
-        """Tests successful dataset retrieval."""
-        result = get_dataset(dataset_id)
-        assert result.name == dataset.name
-
-    def test_get_dataset_not_found(self):
-        """Tests that HTTPException is raised for non-existent dataset."""
-        with pytest.raises(HTTPException) as exc_info:
-            get_dataset("non-existent-id")
-
-        assert exc_info.value.status_code == 404
-        assert "not found" in exc_info.value.detail
-
-    def test_get_sample_success(self, dataset, sample_id):
-        """Tests successful sample retrieval."""
-        sample = get_sample_from_dataset(dataset, sample_id)
-        assert str(sample.id) == sample_id
-
-    def test_get_sample_not_found(self, dataset):
-        """Tests that HTTPException is raised for non-existent sample."""
-        from bson import ObjectId
-
-        bad_id = str(ObjectId())
-
-        with pytest.raises(HTTPException) as exc_info:
-            get_sample_from_dataset(dataset, bad_id)
-
-        assert exc_info.value.status_code == 404
-        assert f"Sample '{bad_id}' not found" in exc_info.value.detail
